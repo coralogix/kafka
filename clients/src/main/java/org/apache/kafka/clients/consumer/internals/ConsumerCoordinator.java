@@ -401,10 +401,11 @@ public final class ConsumerCoordinator extends AbstractCoordinator {
                 // AFTER we've triggered  the revoke callback
                 firstException.compareAndSet(null, rebalanceListenerInvoker.invokePartitionsRevoked(revokedPartitions));
 
+                // NGSTN-1398 Coralogix modification
                 // If revoked any partitions, need to re-join the group afterwards
-                final String fullReason = String.format("need to revoke partitions %s as indicated " +
-                        "by the current assignment and re-join", revokedPartitions);
-                requestRejoin("need to revoke partitions and re-join", fullReason);
+//        final String fullReason = String.format("need to revoke partitions %s as indicated " +
+//          "by the current assignment and re-join", revokedPartitions);
+//        requestRejoin("need to revoke partitions and re-join", fullReason);
             }
         }
 
