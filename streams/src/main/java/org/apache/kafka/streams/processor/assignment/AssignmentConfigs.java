@@ -34,6 +34,7 @@ public class AssignmentConfigs {
     private final OptionalInt rackAwareTrafficCost;
     private final OptionalInt rackAwareNonOverlapCost;
     private final String rackAwareAssignmentStrategy;
+    private final long followupRebalanceDelayMs;
 
     public static AssignmentConfigs of(final StreamsConfig configs) {
         final long acceptableRecoveryLag = configs.getLong(StreamsConfig.ACCEPTABLE_RECOVERY_LAG_CONFIG);
@@ -44,6 +45,7 @@ public class AssignmentConfigs {
         final String rackAwareAssignmentStrategy = configs.getString(StreamsConfig.RACK_AWARE_ASSIGNMENT_STRATEGY_CONFIG);
         final Integer rackAwareTrafficCost = configs.getInt(StreamsConfig.RACK_AWARE_ASSIGNMENT_TRAFFIC_COST_CONFIG);
         final Integer rackAwareNonOverlapCost = configs.getInt(StreamsConfig.RACK_AWARE_ASSIGNMENT_NON_OVERLAP_COST_CONFIG);
+        final long followupRebalanceDelayMs = configs.getLong(StreamsConfig.CX_FOLLOWUP_REBALANCE_DELAY_MS_CONFIG);
 
         return new AssignmentConfigs(
             acceptableRecoveryLag,
@@ -53,7 +55,37 @@ public class AssignmentConfigs {
             rackAwareAssignmentTags,
             rackAwareTrafficCost != null ? OptionalInt.of(rackAwareTrafficCost) : OptionalInt.empty(),
             rackAwareNonOverlapCost != null ? OptionalInt.of(rackAwareNonOverlapCost) : OptionalInt.empty(),
-            rackAwareAssignmentStrategy
+            rackAwareAssignmentStrategy,
+            followupRebalanceDelayMs
+        );
+    }
+
+    public AssignmentConfigs(final long acceptableRecoveryLag,
+                             final int maxWarmupReplicas,
+                             final int numStandbyReplicas,
+                             final long probingRebalanceIntervalMs,
+                             final List<String> rackAwareAssignmentTags,
+                             final OptionalInt rackAwareTrafficCost,
+                             final OptionalInt rackAwareNonOverlapCost,
+                             final String rackAwareAssignmentStrategy,
+                             final long followupRebalanceDelayMs
+                             ) {
+        this.acceptableRecoveryLag = validated(StreamsConfig.ACCEPTABLE_RECOVERY_LAG_CONFIG, acceptableRecoveryLag);
+        this.maxWarmupReplicas = validated(StreamsConfig.MAX_WARMUP_REPLICAS_CONFIG, maxWarmupReplicas);
+        this.numStandbyReplicas = validated(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, numStandbyReplicas);
+        this.probingRebalanceIntervalMs = validated(StreamsConfig.PROBING_REBALANCE_INTERVAL_MS_CONFIG, probingRebalanceIntervalMs);
+        this.rackAwareAssignmentTags = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_TAGS_CONFIG, rackAwareAssignmentTags);
+        this.rackAwareTrafficCost = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_TRAFFIC_COST_CONFIG,
+          defaultRackAwareTrafficCost(rackAwareTrafficCost)
+        );
+        this.rackAwareNonOverlapCost = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_NON_OVERLAP_COST_CONFIG,
+          defaultRackAwareNonOverlapCost(rackAwareNonOverlapCost)
+        );
+        this.rackAwareAssignmentStrategy = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_STRATEGY_CONFIG,
+          rackAwareAssignmentStrategy
+        );
+        this.followupRebalanceDelayMs = validated(StreamsConfig.CX_FOLLOWUP_REBALANCE_DELAY_MS_CONFIG,
+          followupRebalanceDelayMs
         );
     }
 
@@ -65,20 +97,8 @@ public class AssignmentConfigs {
                              final OptionalInt rackAwareTrafficCost,
                              final OptionalInt rackAwareNonOverlapCost,
                              final String rackAwareAssignmentStrategy) {
-        this.acceptableRecoveryLag = validated(StreamsConfig.ACCEPTABLE_RECOVERY_LAG_CONFIG, acceptableRecoveryLag);
-        this.maxWarmupReplicas = validated(StreamsConfig.MAX_WARMUP_REPLICAS_CONFIG, maxWarmupReplicas);
-        this.numStandbyReplicas = validated(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, numStandbyReplicas);
-        this.probingRebalanceIntervalMs = validated(StreamsConfig.PROBING_REBALANCE_INTERVAL_MS_CONFIG, probingRebalanceIntervalMs);
-        this.rackAwareAssignmentTags = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_TAGS_CONFIG, rackAwareAssignmentTags);
-        this.rackAwareTrafficCost = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_TRAFFIC_COST_CONFIG,
-            defaultRackAwareTrafficCost(rackAwareTrafficCost)
-        );
-        this.rackAwareNonOverlapCost = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_NON_OVERLAP_COST_CONFIG,
-            defaultRackAwareNonOverlapCost(rackAwareNonOverlapCost)
-        );
-        this.rackAwareAssignmentStrategy = validated(StreamsConfig.RACK_AWARE_ASSIGNMENT_STRATEGY_CONFIG,
-            rackAwareAssignmentStrategy
-        );
+        this(acceptableRecoveryLag, maxWarmupReplicas, numStandbyReplicas, probingRebalanceIntervalMs, rackAwareAssignmentTags,
+          rackAwareTrafficCost, rackAwareNonOverlapCost, rackAwareAssignmentStrategy, 5000);
     }
 
     public AssignmentConfigs(final long acceptableRecoveryLag,
@@ -166,6 +186,14 @@ public class AssignmentConfigs {
         return rackAwareAssignmentStrategy;
     }
 
+    /**
+     * The delay of followup replica
+     * {@link StreamsConfig#CX_FOLLOWUP_REBALANCE_DELAY_MS_CONFIG}
+     */
+    public long followupRebalanceDelayMs() {
+        return followupRebalanceDelayMs;
+    }
+
     private static <T> T validated(final String configKey, final T value) {
         final ConfigDef.Validator validator = StreamsConfig.configDef().configKeys().get(configKey).validator;
         if (validator != null) {
@@ -185,6 +213,7 @@ public class AssignmentConfigs {
                "\n  rackAwareTrafficCost=" + rackAwareTrafficCost +
                "\n  rackAwareNonOverlapCost=" + rackAwareNonOverlapCost +
                "\n  rackAwareAssignmentStrategy=" + rackAwareAssignmentStrategy +
+               "\n  followupRebalanceDelayMs=" + followupRebalanceDelayMs +
                "\n}";
     }
 

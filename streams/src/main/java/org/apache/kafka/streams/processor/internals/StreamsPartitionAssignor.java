@@ -1560,18 +1560,21 @@ public class StreamsPartitionAssignor implements ConsumerPartitionAssignor, Conf
                                                 final int latestCommonlySupportedVersion,
                                                 final Set<HostInfo> groupHostInfo) {
         if (maybeUpdateSubscriptionVersion(receivedAssignmentMetadataVersion, latestCommonlySupportedVersion)) {
-            log.info("Requested to schedule immediate rebalance due to version probing.");
-            nextScheduledRebalanceMs.set(0L);
+            // Coralogix modification NGSTN-1398
+            log.info("Requested to schedule a rebalance in {}ms due to version probing.", assignmentConfigs.followupRebalanceDelayMs());
+            nextScheduledRebalanceMs.set(time.milliseconds() + assignmentConfigs.followupRebalanceDelayMs());
         } else if (!verifyHostInfo(groupHostInfo)) {
-            log.info("Requested to schedule immediate rebalance to update group with new host endpoint = {}.", userEndPoint);
-            nextScheduledRebalanceMs.set(0L);
+            // Coralogix modification NGSTN-1398
+            log.info("Requested to schedule a rebalance in {}ms to update group with new host endpoint = {}.", assignmentConfigs.followupRebalanceDelayMs(), userEndPoint);
+            nextScheduledRebalanceMs.set(time.milliseconds() + assignmentConfigs.followupRebalanceDelayMs());
         } else if (encodedNextScheduledRebalanceMs == 0L) {
-            log.info("Requested to schedule immediate rebalance for new tasks to be safely revoked from current owner.");
-            nextScheduledRebalanceMs.set(0L);
+            // Coralogix modification NGSTN-1398
+            log.info("Requested to schedule a rebalance in {}ms for new tasks to be safely revoked from current owner.", assignmentConfigs.followupRebalanceDelayMs());
+            nextScheduledRebalanceMs.set(time.milliseconds() + assignmentConfigs.followupRebalanceDelayMs());
         } else if (encodedNextScheduledRebalanceMs < Long.MAX_VALUE) {
             log.info(
-                "Requested to schedule next probing rebalance at {} to try for a more balanced assignment.",
-                Utils.toLogDateTimeFormat(encodedNextScheduledRebalanceMs)
+              "Requested to schedule next probing rebalance at {} to try for a more balanced assignment.",
+              Utils.toLogDateTimeFormat(Math.max(encodedNextScheduledRebalanceMs, assignmentConfigs.followupRebalanceDelayMs()))
             );
             nextScheduledRebalanceMs.set(encodedNextScheduledRebalanceMs);
         } else {
