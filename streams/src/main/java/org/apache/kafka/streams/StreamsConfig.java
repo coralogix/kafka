@@ -846,6 +846,12 @@ public class StreamsConfig extends AbstractConfig {
     private static final String LOG_SUMMARY_INTERVAL_MS_DOC = "This configuration controls the output interval for summary information.\n" +
             "If greater or equal to 0, the summary log will be output according to the set time interval;\n" +
             "If less than 0, summary output is disabled.";
+
+    // Coralogix modification NGSTN-1398
+    @SuppressWarnings("WeakerAccess")
+    public static final String CX_FOLLOWUP_REBALANCE_DELAY_MS_CONFIG = "cx.followup.rebalance.delay.ms";
+    public static final String CX_FOLLOWUP_REBALANCE_DELAY_MS_DOC = "";
+
     /**
      * {@code topology.optimization}
      * @deprecated since 2.7; use {@link #TOPOLOGY_OPTIMIZATION_CONFIG} instead
@@ -1233,7 +1239,13 @@ public class StreamsConfig extends AbstractConfig {
                     Type.LONG,
                     2 * 60 * 1000L,
                     Importance.LOW,
-                    LOG_SUMMARY_INTERVAL_MS_DOC);
+                    LOG_SUMMARY_INTERVAL_MS_DOC)
+            // Coralogix modification NGSTN-1398
+            .define(CX_FOLLOWUP_REBALANCE_DELAY_MS_CONFIG,
+                    Type.LONG,
+                    5 * 1000L,
+                    Importance.MEDIUM,
+                    CX_FOLLOWUP_REBALANCE_DELAY_MS_DOC);
     }
 
     // this is the list of configs for underlying clients
