@@ -20,5 +20,6 @@ jobs:
       - name: Publish
         run: |
           ./gradlew "-PmavenUrl=https://cgx.jfrog.io/artifactory/virtual.sbt.coralogix.net" \
-                    "-PmavenPassword=${{ secrets.ARTIFACTORY_TOKEN }}" \
+                    "-PmavenUsername=${{ secrets.JFROG_USER }}" \
+                    "-PmavenPassword=${{ secrets.JFROG_PASSWORD }}" \
                     publish
